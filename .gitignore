@@ -1,4 +1,8 @@
 desktop.ini
+*.xml
+*.iml
+.idea
+dictionaries
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
