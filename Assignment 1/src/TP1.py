@@ -5,6 +5,9 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KernelDensity
 from sklearn.utils import shuffle
 from sklearn import svm
+""" AA Assignment 1 
+Goncalo Lourenco n55754
+Joana Faria n55780"""
 
 test_file = r"TP1_test.tsv"
 train_file = r"TP1_train.tsv"
