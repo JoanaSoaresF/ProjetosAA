@@ -56,8 +56,9 @@ R7: Os parâmetros foram selecionados através de cross validation. Neste proces
 Utilizando o erro médio de validação é selecionado o valor do parâmetro que produziu um menor erro médio.
 
 Q8: Explique como obteve a melhor hipótese para cada um dos classificadores depois de optimizados os parâmetros.
-R8:
-
+R8: A melhor hipótese após a otimização dos parâmetros é obtida no treino com o conjunto de teste, dando os parâmetros otimizados
+Para o classificador Naive Bayes é dado o melhor valor encontrado para o bandwidth para que o KDE encontre a melhor distribuição de probabilidades, que será utilizado na fórmula, CNaïve Bayes = argmax (k∈{0,1,...,K}) ln p(Ck) + Somatório(ln p(xj|Ck)).
+Para o classificador SVM é dado o melhor parâmetro encontrado para gamma que depois tenta maximizar a distância dos pontos mais próximos da fronteira a esta, maximizando a margem.
 
 Q9: Mostre os melhores valores dos parâmetros optimizados, a estimativa do erro verdadeiro de cada uma das hipóteses que obteve (o seu classificador e os dois fornecidos pela biblioteca), os intervalos do número esperado de erros dados pelo teste normal aproximado e os valores dos testes de McNemar e discuta o que pode concluir daí.
 R9:

@@ -6,11 +6,18 @@ from sklearn.neighbors import KernelDensity
 from sklearn.utils import shuffle
 from sklearn import svm
 
-test_file = r"C:\Users\joana\Documents\Escola\Engenharia Informática\4ºAno\1ºSemestre\Aprendizagem Automática\ProjetosAA\Assignment 1\data\TP1_test.tsv"
-train_file = r"C:\Users\joana\Documents\Escola\Engenharia Informática\4ºAno\1ºSemestre\Aprendizagem Automática\ProjetosAA\Assignment 1\data\TP1_train.tsv"
+test_file = r"TP1_test.tsv"
+train_file = r"TP1_train.tsv"
 
 
 def standardization(train, test):
+    """
+    Standardizes the data
+    :param train: training data
+    :param test: testing data
+    :return:  the train set and the test set standardized
+    """
+
     means = np.mean(train, axis=0)
     stds = np.std(train, axis=0)
     s_train = (train - means) / stds
@@ -19,6 +26,12 @@ def standardization(train, test):
 
 
 def load_data(train_file, test_file):
+    """
+    Loads the data from the files, shuffles and standardizes the data
+    :param train_file: file with the training data
+    :param test_file:  file with the testing data
+    :return:  features of the training set, classes of the training set; features of the test set, classes of the test set
+    """
     train = np.loadtxt(train_file, delimiter='\t')
     test = np.loadtxt(test_file, delimiter='\t')
     train = shuffle(train)
@@ -41,12 +54,16 @@ def apriori_probability(data):
     return np.log(class0 / total), np.log(class1 / total)
 
 
-# bandwidth
-# full training set ( X, Y) - training and validation
-# indices para a parte de treino
-# indices para a parte de validação
 def naive_bayes_fold_errors(bandwidth, X, Y, train_ix, valid_ix):
-    """return error for train and validation sets"""
+    """
+    Computes the errors test and validation error for one fold with the Naive Bayes classifier
+    :param bandwidth:
+    :param X: features of the complete training set
+    :param Y: classes of the complete training set
+    :param train_ix: indexes to use for the training
+    :param valid_ix:  indexes to use for validation
+    :return: error for train and validation sets
+    """
 
     kde = KernelDensity(kernel='gaussian', bandwidth=bandwidth)
 
@@ -76,10 +93,15 @@ def naive_bayes_fold_errors(bandwidth, X, Y, train_ix, valid_ix):
     return num_error_train / total_train, num_error_valid / total_valid
 
 
-# full training set ( X_r, Y_r) - training and validation
-# test set (X_t e Y_t)
 def naive_bayes_test_error(bandwidth, train_X, train_Y, test_X, test_Y):
-    """return test error and predictions on test set"""
+    """
+    :param bandwidth: best bandwidth obtain in cross validation
+    :param train_X: features of the complete training set
+    :param train_Y: classes of the complete training set
+    :param test_X: features of the complete testing set
+    :param test_Y: classes of the complete testing set
+    :return: test error and predictions on the test set
+    """
 
     kde = KernelDensity(kernel='gaussian', bandwidth=bandwidth)
     # calculated only in the training set
@@ -106,8 +128,16 @@ def naive_bayes_test_error(bandwidth, train_X, train_Y, test_X, test_Y):
 
 
 def naive_bayes(train_X, train_Y, test_X, test_Y, folds):
-    """Returns the best bandwidth, the predictions on the test set and the test error. Computed by the Naive Bayes
-    classifier """
+    """
+    Computed by the Naive Bayes classifier
+    :param train_X: training set features
+    :param train_Y: training set classes
+    :param test_X: test set features
+    :param test_Y: test set classes
+    :param folds: number of folds to use in cross validation
+    :return:  the best bandwidth, the predictions on the test set and the test error.
+    """
+
     kf = StratifiedKFold(n_splits=folds)
     lowest_error = 100000
     best_bandwidth = -1
@@ -141,6 +171,16 @@ def naive_bayes(train_X, train_Y, test_X, test_Y, folds):
 
 
 def plot(errs, train_label, validation_label, x_label, y_label, graphic_title, x_values):
+    """
+    Plots the graphic
+    :param errs: errors to use in the Y axis
+    :param train_label: label for the training errors line
+    :param validation_label: label for the validation errors line
+    :param x_label: label for the x axis
+    :param y_label: label for the y axis
+    :param graphic_title:
+    :param x_values: values for the x axis
+    """
     fig = plt.figure(figsize=(8, 8), frameon=True)
     plt.plot(x_values, errs[:, 0], '-b', linewidth=3, label=train_label)
     plt.plot(x_values, errs[:, 1], '-r', linewidth=3, label=validation_label)
@@ -159,6 +199,16 @@ def plot(errs, train_label, validation_label, x_label, y_label, graphic_title, x
 
 
 def svm_fold_errors(gamma, C, X, Y, tr_ix, val_ix):
+    """
+    Computes the errors test and validation error for one fold with the SVM classifier
+    :param gamma:
+    :param C:
+    :param X: features of the complete training set
+    :param Y: classes of the complete training set
+    :param tr_ix: indexes to use for the training
+    :param val_ix:  indexes to use for validation
+    :return: the test and validation errors
+    """
     sv = svm.SVC(C=C, kernel='rbf', gamma=gamma)
     sv.fit(X[tr_ix], Y[tr_ix])
     train_error = 1 - sv.score(X[tr_ix], Y[tr_ix])
@@ -167,6 +217,16 @@ def svm_fold_errors(gamma, C, X, Y, tr_ix, val_ix):
 
 
 def svm_test_error(best_gamma, C, train_X, train_Y, test_X, test_Y):
+    """
+    Computes test error and class predictions by the SVM classifier in the test set
+    :param best_gamma: best gamma obtained in cross validation
+    :param C: best C found, or default C=1
+    :param train_X: features of the complete training set
+    :param train_Y: classes of the complete training set
+    :param test_X: features of the complete testing set
+    :param test_Y: classes of the complete testing set
+    :return: test error and predictions on the test set
+    """
     sv = svm.SVC(C=C, kernel='rbf', gamma=best_gamma)
     sv.fit(train_X, train_Y)
     predictions = sv.predict(test_X)
@@ -175,8 +235,15 @@ def svm_test_error(best_gamma, C, train_X, train_Y, test_X, test_Y):
 
 
 def svm_classifier(train_X, train_Y, test_X, test_Y, folds):
-    """Returns the best bandwidth, the predictions on the test set and the test error. Computed by the Naive Bayes
-        classifier """
+    """
+    Computed by the SVM classifier
+    :param train_X: training set features
+    :param train_Y: training set classes
+    :param test_X: test set features
+    :param test_Y: test set classes
+    :param folds: number of folds to use in cross validation
+    :return:  best gamma, the predictions on the test set and the test error
+    """
     kf = StratifiedKFold(n_splits=folds)
     lowest_error = 100000
     best_gamma = -1
@@ -210,8 +277,15 @@ def svm_classifier(train_X, train_Y, test_X, test_Y, folds):
 
 
 def svm_classifier_with_c(train_X, train_Y, test_X, test_Y, folds):
-    """Returns the best bandwidth, the predictions on the test set and the test error. Computed by the Naive Bayes
-        classifier """
+    """
+        Computed by the SVM classifier optimizing gamma and C
+        :param train_X: training set features
+        :param train_Y: training set classes
+        :param test_X: test set features
+        :param test_Y: test set classes
+        :param folds: number of folds to use in cross validation
+        :return:  best gamma, best c, the predictions on the test set and the test error
+        """
     kf = StratifiedKFold(n_splits=folds)
     lowest_error = 100000
     best_gamma = -1
@@ -243,8 +317,15 @@ def svm_classifier_with_c(train_X, train_Y, test_X, test_Y, folds):
     return best_gamma, best_c, predictions, test_error
 
 
-def gauss_naive_bayes(train_X, train_Y, test_X, test_Y, folds):
-    """Returns test error and predictions on the test set with a gaussian Naive Bayes classifier"""
+def gauss_naive_bayes(train_X, train_Y, test_X, test_Y):
+    """
+    Computed  gaussian Naive Bayes classifier
+    :param train_X: training set features
+    :param train_Y: training set classes
+    :param test_X: test set features
+    :param test_Y: test set classes
+    :return: test error and predictions on the test set
+    """
     gauss = GaussianNB()
     gauss.fit(train_X, train_Y)
     predictions = gauss.predict(test_X)
@@ -253,6 +334,14 @@ def gauss_naive_bayes(train_X, train_Y, test_X, test_Y, folds):
 
 
 def normal_test(n, error_NB, error_SVM, error_gauss):
+    """
+    Computes the normal test between the 3 classifiers (Naive Bayes, SVM and Gaussian Naive Bayes), printing the
+    intervals and the conclusion
+    :param n: total number of examples
+    :param error_NB: test error in the naive bayes classifier
+    :param error_SVM: test error in the SVM classifier
+    :param error_gauss: test error in the gaussian naive bayes classifier
+    """
     stds_NB = np.sqrt(n * error_NB * (1 - error_NB))
     stds_SVM = np.sqrt(n * error_SVM * (1 - error_SVM))
     stds_gauss = np.sqrt(n * error_gauss * (1 - error_gauss))
@@ -276,6 +365,15 @@ def normal_test(n, error_NB, error_SVM, error_gauss):
 
 
 def compare_normal_intervals(min_1, max_1, min_2, max_2, name_1, name_2):
+    """
+    Compares two intervals from the normal test
+    :param min_1: lower limit of classifier 1
+    :param max_1: upper limit of classifier 1
+    :param min_2: lower limit of classifier 2
+    :param max_2: upper limit of classifier 2
+    :param name_1: name of the classifier 1
+    :param name_2: name of the classifier 2
+    """
     if (min_2 <= min_1 <= max_2) or (min_2 <= max_1 <= max_2):
         print("Os classificadores {} e {} não apresentam diferenças significativas, pelo que podem ter performances "
               "semelhantes".format(name_1, name_2))
@@ -286,6 +384,18 @@ def compare_normal_intervals(min_1, max_1, min_2, max_2, name_1, name_2):
 
 
 def mcnemar_test(Y, predictions_NB, predictions_SVM, predictions_gauss, error_nb, error_svm, error_gauss):
+    """
+    Performs the mcnemar test with the 3 classifiers (Naive Bayes, SVM and Gaussian Naive Bayes), printing the
+    result value and the conclusion
+    :param Y: true classes of the test set
+    :param predictions_NB: predictions made by the Naive Bayes classifier
+    :param predictions_SVM: predictions made by the SVM classifier
+    :param predictions_gauss: predictions made by the Gaussian Naive Bayes classifier
+    :param error_nb: test error on the Naive Bayes classifier
+    :param error_svm: test error on the SVM classifier
+    :param error_gauss: test error on the Gaussian Naive Bayes classifier
+    """
+
     print("-------McNemar test resultados-------")
     compare_mcnemar_test(predictions_NB, predictions_SVM, Y, error_nb, error_svm, "Naive Bayes", "SVM")
     compare_mcnemar_test(predictions_NB, predictions_gauss, Y, error_nb, error_gauss, "Naive Bayes",
@@ -294,6 +404,16 @@ def mcnemar_test(Y, predictions_NB, predictions_SVM, predictions_gauss, error_nb
 
 
 def compare_mcnemar_test(predictions_0, predictions_1, Y, error_0, error_1, name_0, name_1):
+    """
+    Compares two classifiers with the mcnemar test
+    :param predictions_0: predictions on classifier 0
+    :param predictions_1: predictions on classifier 1
+    :param Y: true classes of the test set
+    :param error_0: test error on the classifier 0
+    :param error_1: test error on the classifier 1
+    :param name_0: name of the classifier 0
+    :param name_1: name of the classifier 1
+    """
     e01 = np.count_nonzero(np.logical_and(np.not_equal(Y, predictions_0), np.equal(Y, predictions_1)))
     e10 = np.count_nonzero(np.logical_and(np.not_equal(Y, predictions_1), np.equal(Y, predictions_0)))
     # e10 = np.count_nonzero((Y != predictions_1) and (Y == predictions_0))
@@ -323,7 +443,8 @@ def main():
     normal_test(test_Y.shape[0], true_error_NB, true_error_SVM, true_error_GAUSS)
     mcnemar_test(test_Y, predictions_NB, predictions_SVM, predictions_GAUSS, true_error_NB, true_error_SVM,
                  true_error_GAUSS)
-    compare_mcnemar_test(predictions_SVM, predictions_SVM_OPT, test_Y, true_error_SVM, true_error__SVM_OPT, "SVM", "SVM otimizado")
+    compare_mcnemar_test(predictions_SVM, predictions_SVM_OPT, test_Y, true_error_SVM, true_error__SVM_OPT, "SVM",
+                         "SVM otimizado")
 
 
 main()
