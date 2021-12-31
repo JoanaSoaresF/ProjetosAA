@@ -12,31 +12,67 @@ QUESTÔES:
 
 Q1: Explique como seleccionou os melhores atributos para a fase de clustering. Em particular, os métodos de visualização usados para explorar os 18 atributos extraídos e quaisquer testes estatísticos usados.
 R1:
+Começamos por extrair os atributos usando 3 métodos diferentes, extraindo 6 com cada método : o PCA, o T-SNE e ISOMAP.
+Dado que temos imagens com labels prévias escolhemos usar o método ANOVA para análise das variâncias e selecionar os 6 melhores atributos (com maior valor de f), e obtivemos os seguintes resultados:
+['0-pca0', '1-pca1', '2-pca2', '7-tsne1', '12-isomap0', '13-isomap1']
+[ 7.84258393 46.63388161 19.18778378  7.99139872 21.99504424 42.17749338]
+De seguida pretendíamos eliminar atributos que estivessem relacionados entre si, dado que atributo com relações entre si não adicionam mais informações e podem levar a overfitting. Para tal utilizamos uma scatter-matrix para visualizar relações entre pares de atributos (ficheiro scatter_matrix.png), a partir da qual concluímos que o atributo 7-tsne1 se relacionava com todos os outros atributos, pelo que o excluímos. Também verificamos uma relação entre o atributo 0-pca0 e o 12-isomap0, onde excluímos o 0-pca0 porque era o que apresentava o menor valor no teste ANOVA.
 
 
 Q2: Depois de seleccionar os atributos, standardizou ou normalizou os valores? Justifique a sua decisão.
-R2:
+R2: Para evitar erros/imprecisões com cálculos usando valores elevados começamos por dividir os valores obtidos por 255. Após a extração dos atributos optamos por os standarizar para uniformizar as distribuições de valores, dado que distribuições muito dispares podem influenciar os resultados, dando demasiado ou demasiado pouco enfâse a alguns pontos.
 
 
 Q3: Explique como encontrou o valor do raio da vizinhança (epsilon) para o algoritmo de DBSCAN pelo procedimento descrito no artigo "A density-based algorithm for discovering clusters in large spatial databases with noise".
-R3:
+R3: Primeiro, como refere o artigo, calculamos as distâncias dos 4 vizinhos mais próximos usando o KNeighborsClassifier. Conseguimos então obter as distâncias de todos os pontos a esses vizinhos e usando o KneeLocator encontramos o "elbow" da curva, obtendo a distância ideal. Este limiar permite distinguir pontos considerados "noise" e pontos a serem considerados para o cluster.
+Para identificarmos o "elbow" fizemos também plot do gráfico, obtendo o ficheiro: "neighboursIDS_distance.png"
 
 
 Q4: Examinando os clusters gerados pelo algoritmo DBSCAN com o valor otimizado pelo método descrito no artigo, parece-lhe que o resultado é adequado para aglomerar estas imagens? Justifique a sua resposta.
-R4:
+R4: Examinando o report "Chosen DBSCAN eps=0.76.html" percebemos que os clusters formados com este algoritmos e com o valor otimizado encontrado não nos são uteis. Temos a formação de apenas um cluster, e algumas imagens classificadas como noise.
 
 
 Q5: Descreva a sua análise dos parâmetros k (para K-Means) e epsilon (para DBSCAN) usando os indicadores internos e externos indicados no enunciado. Inclua os dois gráficos com os valores dos indicadores (indicando o nome da imagem de cada plot numa linha da resposta) em função dos parâmetros k e epsilon e descreva a escolha dos intervalos nos quais examinou estes parâmetros. Indique, justificando, que conclusões pode tirar desta análise.
 R5:
+Para o algoritmo K-Means variamos o valor de k de 2 a 6 grupos. Dado que as células se encontram em três fases distintas e há imagens com problemas de segmentação, conseguimos identificar no mínimo 2 clusters possíveis (imagens segmentadas e não segmentadas) e no máximo 6 (as diferentes fases das células e as imagens segmentadas mais integradas nas diferentes fases celulares).
+Obtivemos os o seguinte grafico com os diversos indicadores:
+performance_plots/K-Means_performance.png
+Através deste ficheiro concluímos que obtemos melhores resultados com k=3, no entanto, observado os clusters formados percebemos que dificilmente seriam de alguma utilidade.
+
+Para o algoritmo DBSCAN variamos o valor de Epsilon de aproximadamente 0,63 a 0,87, sendo que o valor otimizado encontrado foi 0,76. O gráfico com os valores obtidos para os diferentes indicadores encontra-se no ficheiro:
+performance_plots/DBSCAN_performance.png
+Após análise do mesmo concluímos, através dos baixos valores do Adjusted Rand index, que os resultados não nos dão grandes informações sobre as fases celulares.
+
+Dado que os nossos dados são maioritariamente sem labels o indicador mais importante de considerar será o silhouette score. Olhando para os valores obtidos nos diferentes algoritmos e com as mudanças de parâmetros percebemos que este indicador assume sempre valores muito baixos indicando que os clusters formados não são muito distinguíveis entre si.
 
 Q6: Seleccione alguns valores dos parâmetros testados na questão cinco e examine os clusters correspondentes com mais atenção, gerando o ficheiro HTML com as imagens. Justifique a escolha destes valores, discuta as diferentes opções e proponha uma recomendação que poderia ajudar a tarefa dos biólogos de classificar as células e rejeitar erros de segmentação.
-R6:
+R6: Pegando em alguns exemplos do K-Means:
+    K-Means_plots/k-means k=2.html
+        -> Aqui conseguimos perceber que no cluster 0 estão células, maioritariamente, da primeira fase. No entanto, existem ainda exemplos da fase dois e muitas células segmentadas. Deduzimos assim que a separação foi feita de modo a tentar separar as células da fase um, das das fases 2 e 3 sem ter em conta a segmentação ou não das mesmas.
+
+    K-Means_plots/k-means k=3.html
+        -> O exemplo com k=3, embora apresente melhores resultados estatísticos, tem um resultado de pouco interesse quando aplicado ao contexto do problema, no cluster 0 temos, em grande parte células da fase 1 e fragmentos de células em menor escala, mas conseguimos identificar células da fase 2 pelo meio. Saltando para o cluster 2 temos uma continuação do cluster anteriormente referido agora com uma maior taxa de células na fase 2.
+        Por fim, o cluster 1 tem a maioria das células da fase 3 com células em fase 2 e fragmentos triangulares.
+
+    K-Means_plots/k-means k=4.html
+        -> Neste exemplo, a divisão foi feita tendo em conta a iluminação das fotografias, com pouco cuidado para com as fases das células nelas representadas pelo que esta opção seria de praticamente nenhuma importância quando apresentada aos biólogos.
+
+    K-Means_plots/k-means k=6.html
+        -> Por fim, neste exemplo é possível uma classificação primária por grupos (clusters) se for efetuada uma revisão caso a caso posteriormente. Embora os resultados apresentados na questão 5, talvez seja este o resultado de maior utilidade. No cluster 0, 3 e 5 encontramos células maioritariamente da fase 1, no cluster 1 células na fase 3, no cluster 4 praticamente todas as células estão fragmentadas e no cluster 2 existem células da fase 1 e 2.
+
+    Em relação aos exemplos do DBSCAN não há muito a relatar, quando epsilon >= 0.76 temos apenas um cluster de onde é diferenciado pequenos exemplos considerados "noise" pelo que não há qualquer divisão feita. Quando o epsilon é menos que este valor (0.76) embora surjam mais um, dois ou três clusters são de dimensões tão diminutas que mesmo quando são praticamente definidos por uma fase da multiplicação celular mostram-se irrelevantes no contexto do problema.
 
 Q7: Discuta vantagens, problemas ou otros aspectos destes dois algoritmos (K-Means e DBSCAN) que considere relevantes para ajudar os biólogos a organizar estas imagens, considerando o seu conhecimento teórico destes algoritmos bem como os resultados que obteve no seu trabalho.
-R7:
+R7: O método DBSCAN não é adequado para ajudar os cientistas uma vez agrupa as imagens com base na sua densidade e estas são bastante semelhantes (fundo negro, "objeto" circular de cor branca, risca branca mais ou menos "transparente"). Assim, embora os resultados sejam pouco positivos, estes eram de ser esperados.
+    Em relação ao método K-Means, uma vez que lhe é fornecido, à partida, o número de clusters a formar, ele tentará dividir as imagens tendo em conta as pequenas diferenças que irão surgindo entre grupos pelo que será uma melhor escolha para a situação.
 
 Q8: Considere outros algoritmos de clustering implementados na biblioteca Scikit-Learn. Escolha um e aplique-o a este problema, optimizando os parâmetros que julgar adequado da forma que lhe parecer melhor. Justifique a sua escolha e discuta se esta opção daria resultados mais úteis para os biólogos.
 R8:
+
+Por todos os motivos mencionados e acima discutidos pensamos ser melhor escolher um algoritmo de clustering semelhante ao K-Means, um algoritmo baseado nas "distancias" dos dados fornecidos, e, como tal, escolhemos o Affinity Propagation Clustering Algorithm.
+Este algoritmo consiste em ir "trocando mensagens" entre pares de pontos até convergir para um equilíbrio onde os pontos estão ligados ao cluster "mais próximo". Após a compreensão do algoritmo, decidimos que seria vantajoso melhorarmos o valor para o "dumping"(valor considerado importante na documentação do algoritmo) variando-o de 0.5 a 1(exclusive).
+Em resultado deste algoritmo, embora tenhamos um elevado número de clusters (25-30) estes clusters têm praticamente todas as imagens referentes a células da mesma fase, como tal, pensamos ser uma mais valia para os biólogos que podem assim classificar grupos inteiros tendo apenas de realizar umas alterações "menores".
+Assim sendo, este resultado parece-nos bastante preferível aos anteriores, embora ainda não seja "perfeito" quando pensamos na necessidade de nomear grupos que "caem" na mesma categoria, parece-nos bastante aceitável quando nós próprios encontramos dificuldade em distinguir algumas das fotografias.
 
 Q9: (Opcional) Implemente o algoritmo de clustering hierárquico Bissecting K-Means, conforme descrito na página do enunciado e na Aula 19. Examine e discuta os resultados e sua aplicação ao problema de ajudar os biólogos a selecionar e classificar imagens de células.
 R9:
